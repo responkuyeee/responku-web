@@ -10,7 +10,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
                     <ArrowLeft className="size-4" />
                     Back to Home
                 </Link>
-                <span className="text-sm font-semibold tracking-tight text-foreground">MyNextJs</span>
+                <span className="text-sm font-semibold tracking-tight text-foreground">Responku</span>
             </div>
 
             <div className="w-full max-w-4xl">{children}</div>
