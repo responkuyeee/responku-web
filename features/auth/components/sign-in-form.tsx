@@ -24,8 +24,14 @@ export function SignInForm() {
     const [isLoading, setIsLoading] = useState(false);
 
     const signInSchema = z.object({
-        email: z.string().min(1, { message: t('emailRequired') }).email({ message: t('emailInvalid') }),
-        password: z.string().min(1, { message: t('passwordRequired') }).min(8, { message: t('passwordMin') }),
+        email: z
+            .string()
+            .min(1, { message: t('emailRequired') })
+            .email({ message: t('emailInvalid') }),
+        password: z
+            .string()
+            .min(1, { message: t('passwordRequired') })
+            .min(8, { message: t('passwordMin') }),
         rememberMe: z.boolean().default(false).optional()
     });
 
@@ -51,7 +57,7 @@ export function SignInForm() {
             await authService.signIn({
                 email: data.email,
                 password: data.password,
-                providerId: 'credentials'
+                providerId: 'CREDENTIALS'
             });
             toast.success(t('success'));
             router.push('/me');
@@ -105,7 +111,7 @@ export function SignInForm() {
                     <div className="relative">
                         <Input id="password" type={showPassword ? 'text' : 'password'} placeholder={t('passwordPlaceholder')} className="pr-10" aria-invalid={!!errors.password} {...register('password')} />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1}>
-                            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                            {showPassword ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
                         </button>
                     </div>
                     {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
