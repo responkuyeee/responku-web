@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 import { AuthCard } from './auth-card';
 import { Input } from '@/components/ui/input';
@@ -17,23 +18,30 @@ import { Badge } from '@/components/ui/badge';
 import { GetUserResponse } from '@/types/auth';
 import { authService } from '@/services/auth/auth.service';
 
-const profileSchema = z.object({
-    fullName: z.string().min(2, { message: 'Full name must be at least 2 characters' }),
-    email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Invalid email address' }),
-    role: z.string().min(1, { message: 'Role is required' }),
-    bio: z.string().max(200, { message: 'Bio cannot exceed 200 characters' }).optional()
-});
-
-type ProfileValues = z.infer<typeof profileSchema>;
-
 type UserProfileProps = {
     user: GetUserResponse['data'];
 };
 
 export function UserProfile({ user }: UserProfileProps) {
+    const t = useTranslations('Auth.Me');
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isSigningOut, setIsSigningOut] = useState(false);
+
+    const profileSchema = z.object({
+        fullName: z.string().min(2, { message: t('fullNameRequired') }),
+        email: z
+            .string()
+            .min(1, { message: t('emailRequired') })
+            .email({ message: t('emailInvalid') }),
+        role: z.string().min(1, { message: t('roleRequired') }),
+        bio: z
+            .string()
+            .max(200, { message: t('bioMax') })
+            .optional()
+    });
+
+    type ProfileValues = z.infer<typeof profileSchema>;
 
     const userInitials = (user.name || 'U')
         .split(' ')
@@ -62,11 +70,11 @@ export function UserProfile({ user }: UserProfileProps) {
         setIsLoading(true);
         try {
             await new Promise(resolve => setTimeout(resolve, 600));
-            toast.success('Profile updated successfully', {
-                description: `Updated info for ${data.fullName}`
+            toast.success(t('updateSuccess'), {
+                description: t('updatedInfoFor', { name: data.fullName })
             });
         } catch {
-            toast.error('Failed to update profile');
+            toast.error(t('updateError'));
         } finally {
             setIsLoading(false);
         }
@@ -76,17 +84,17 @@ export function UserProfile({ user }: UserProfileProps) {
         setIsSigningOut(true);
         try {
             await authService.signOut();
-            toast.success('Signed out');
+            toast.success(t('signOutSuccess'));
         } catch {
-            toast.info('Signed out');
+            toast.info(t('signOutSuccess'));
         } finally {
             setIsSigningOut(false);
-            router.push('/login');
+            router.push('/sign-in'); // Redirecting back to /sign-in using our routing
         }
     }
 
     return (
-        <AuthCard title="Profile" description="Manage your account information and preferences." imageSrc="https://res.cloudinary.com/diljekoto/image/upload/v1789123846/alaory-5e2Zme1mVDE-unsplash_ziafjj_537c8f.webp">
+        <AuthCard title={t('title')} description={t('description')} imageSrc="https://res.cloudinary.com/diljekoto/image/upload/v1789123846/alaory-5e2Zme1mVDE-unsplash_ziafjj_537c8f.webp">
             <div className="space-y-6">
                 {/* User Avatar Summary Header */}
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border-2 border-border">
@@ -100,11 +108,11 @@ export function UserProfile({ user }: UserProfileProps) {
                                 <h3 className="font-semibold text-foreground text-sm">{user.name}</h3>
                                 {user.verifiedAt ? (
                                     <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-normal bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
-                                        Verified
+                                        {t('verified')}
                                     </Badge>
                                 ) : (
                                     <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-normal text-amber-500 border-amber-500/20">
-                                        Unverified
+                                        {t('unverified')}
                                     </Badge>
                                 )}
                             </div>
@@ -112,7 +120,7 @@ export function UserProfile({ user }: UserProfileProps) {
                         </div>
                     </div>
                     <Button type="button" variant="ghost" size="sm" onClick={handleSignOut} disabled={isSigningOut} className="text-xs text-destructive hover:bg-destructive/10 hover:text-destructive">
-                        {isSigningOut ? 'Signing out...' : 'Sign out'}
+                        {isSigningOut ? t('signingOut') : t('signOut')}
                     </Button>
                 </div>
 
@@ -122,7 +130,7 @@ export function UserProfile({ user }: UserProfileProps) {
                         {/* Full Name */}
                         <div className="space-y-1">
                             <Label htmlFor="fullName" className="text-sm font-medium">
-                                Full Name
+                                {t('fullName')}
                             </Label>
                             <Input id="fullName" type="text" aria-invalid={!!errors.fullName} {...register('fullName')} />
                             {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
@@ -141,7 +149,7 @@ export function UserProfile({ user }: UserProfileProps) {
                     {/* Role */}
                     <div className="space-y-1">
                         <Label htmlFor="role" className="text-sm font-medium">
-                            Role / Position
+                            {t('role')}
                         </Label>
                         <Input id="role" type="text" aria-invalid={!!errors.role} {...register('role')} />
                         {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
@@ -150,16 +158,16 @@ export function UserProfile({ user }: UserProfileProps) {
                     {/* Bio */}
                     <div className="space-y-1">
                         <Label htmlFor="bio" className="text-sm font-medium">
-                            Bio
+                            {t('bio')}
                         </Label>
-                        <Textarea id="bio" rows={3} className="resize-none" placeholder="Write a short bio..." aria-invalid={!!errors.bio} {...register('bio')} />
+                        <Textarea id="bio" rows={3} className="resize-none" placeholder={t('bioPlaceholder')} aria-invalid={!!errors.bio} {...register('bio')} />
                         {errors.bio && <p className="text-xs text-destructive">{errors.bio.message}</p>}
                     </div>
 
                     {/* Action Buttons */}
                     <div className="flex items-center justify-end gap-3 pt-2">
                         <Button type="submit" disabled={isLoading || !isDirty}>
-                            {isLoading ? 'Saving...' : 'Save changes'}
+                            {isLoading ? t('saving') : t('saveChanges')}
                         </Button>
                     </div>
                 </form>

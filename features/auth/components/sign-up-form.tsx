@@ -2,12 +2,12 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/routing';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,28 +17,32 @@ import { authService } from '@/services/auth/auth.service';
 import { ApiException } from '@/services/types';
 import { AuthCard } from './auth-card';
 
-const signUpSchema = z
-    .object({
-        fullName: z.string().min(2, { message: 'Full name must be at least 2 characters' }),
-        email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Invalid email address' }),
-        password: z.string().min(8, { message: 'Password must be at least 8 characters' }),
-        confirmPassword: z.string().min(1, { message: 'Please confirm your password' }),
-        terms: z.boolean().refine(val => val === true, {
-            message: 'You must accept the terms to proceed'
-        })
-    })
-    .refine(data => data.password === data.confirmPassword, {
-        message: 'Passwords do not match',
-        path: ['confirmPassword']
-    });
-
-type SignUpValues = z.infer<typeof signUpSchema>;
-
 export function SignUpForm() {
+    const t = useTranslations('Auth.SignUp');
     const router = useRouter();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+
+    const signUpSchema = z
+        .object({
+            fullName: z.string().min(2, { message: t('fullNameRequired') }),
+            email: z
+                .string()
+                .min(1, { message: t('emailRequired') })
+                .email({ message: t('emailInvalid') }),
+            password: z.string().min(8, { message: t('passwordMin') }),
+            confirmPassword: z.string().min(1, { message: t('confirmPassword') }),
+            terms: z.boolean().refine(val => val === true, {
+                message: t('termsRequired')
+            })
+        })
+        .refine(data => data.password === data.confirmPassword, {
+            message: t('passwordsNotMatch'),
+            path: ['confirmPassword']
+        });
+
+    type SignUpValues = z.infer<typeof signUpSchema>;
 
     const {
         register,
@@ -65,13 +69,13 @@ export function SignUpForm() {
                 password: params.password,
                 providerId: 'credentials'
             });
-            toast.success('Account created');
+            toast.success(t('success'));
             router.push(`/email-verification?email=${encodeURIComponent(params.email)}`);
         } catch (exception) {
             if (exception instanceof ApiException) {
-                toast.error(exception.message || 'Registration failed');
+                toast.error(exception.message || t('error'));
             } else {
-                toast.error('Registration failed');
+                toast.error(t('error'));
             }
         } finally {
             setIsLoading(false);
@@ -79,23 +83,23 @@ export function SignUpForm() {
     }
 
     return (
-        <AuthCard title="Create an account" description="Enter your information to get started." imageSrc="https://res.cloudinary.com/diljekoto/image/upload/v1789123849/nour-betar-BFazlw6s0N8-unsplash_nhd6pf_51140e.webp">
+        <AuthCard title={t('title')} description={t('description')} imageSrc="https://res.cloudinary.com/diljekoto/image/upload/v1789123849/nour-betar-BFazlw6s0N8-unsplash_nhd6pf_51140e.webp">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 {/* Full Name */}
                 <div className="space-y-1">
                     <Label htmlFor="fullName" className="text-sm font-medium">
-                        Full Name
+                        {t('fullName')}
                     </Label>
-                    <Input id="fullName" type="text" placeholder="John Doe" aria-invalid={!!errors.fullName} {...register('fullName')} />
+                    <Input id="fullName" type="text" placeholder={t('fullNamePlaceholder')} aria-invalid={!!errors.fullName} {...register('fullName')} />
                     {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
                 </div>
 
                 {/* Email */}
                 <div className="space-y-1">
                     <Label htmlFor="email" className="text-sm font-medium">
-                        Email
+                        {t('email')}
                     </Label>
-                    <Input id="email" type="email" placeholder="your@email.com" aria-invalid={!!errors.email} {...register('email')} />
+                    <Input id="email" type="email" placeholder={t('emailPlaceholder')} aria-invalid={!!errors.email} {...register('email')} />
                     {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
                 </div>
 
@@ -103,10 +107,10 @@ export function SignUpForm() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                         <Label htmlFor="password" className="text-sm font-medium">
-                            Password
+                            {t('password')}
                         </Label>
                         <div className="relative">
-                            <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" className="pr-10" aria-invalid={!!errors.password} {...register('password')} />
+                            <Input id="password" type={showPassword ? 'text' : 'password'} placeholder={t('passwordPlaceholder')} className="pr-10" aria-invalid={!!errors.password} {...register('password')} />
                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1}>
                                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                             </button>
@@ -116,10 +120,10 @@ export function SignUpForm() {
 
                     <div className="space-y-1">
                         <Label htmlFor="confirmPassword" className="text-sm font-medium">
-                            Confirm Password
+                            {t('confirmPassword')}
                         </Label>
                         <div className="relative">
-                            <Input id="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} placeholder="••••••••" className="pr-10" aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />
+                            <Input id="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} placeholder={t('passwordPlaceholder')} className="pr-10" aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />
                             <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1}>
                                 {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                             </button>
@@ -133,7 +137,7 @@ export function SignUpForm() {
                     <div className="flex items-center space-x-2">
                         <Controller name="terms" control={control} render={({ field }) => <Checkbox id="terms" checked={!!field.value} onCheckedChange={checked => field.onChange(!!checked)} />} />
                         <Label htmlFor="terms" className="text-xs text-muted-foreground font-normal cursor-pointer">
-                            I agree to the Terms of Service and Privacy Policy
+                            {t('terms')}
                         </Label>
                     </div>
                     {errors.terms && <p className="text-xs text-destructive mt-1">{errors.terms.message}</p>}
@@ -141,7 +145,7 @@ export function SignUpForm() {
 
                 {/* Submit Button */}
                 <Button type="submit" className="w-full mt-2" disabled={isLoading}>
-                    {isLoading ? 'Creating account...' : 'Create account'}
+                    {isLoading ? t('submitting') : t('submit')}
                 </Button>
 
                 {/* Social Login */}
@@ -153,9 +157,9 @@ export function SignUpForm() {
 
                 {/* Link */}
                 <p className="text-center text-xs text-muted-foreground pt-3">
-                    Already have an account?{' '}
+                    {t('haveAccount')}{' '}
                     <Link href="/sign-in" className="text-primary font-medium hover:underline">
-                        Sign in
+                        {t('signIn')}
                     </Link>
                 </p>
             </form>

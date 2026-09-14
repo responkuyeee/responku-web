@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/routing';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { AuthCard } from './auth-card';
 import { Input } from '@/components/ui/input';
@@ -17,18 +17,19 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { authService } from '@/services/auth/auth.service';
 import { ApiException } from '@/services/types';
 
-const signInSchema = z.object({
-    email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Invalid email address' }),
-    password: z.string().min(1, { message: 'Password is required' }).min(8, { message: 'Password must be at least 8 characters' }),
-    rememberMe: z.boolean().default(false).optional()
-});
-
-type SignInValues = z.infer<typeof signInSchema>;
-
 export function SignInForm() {
+    const t = useTranslations('Auth.SignIn');
     const router = useRouter();
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+
+    const signInSchema = z.object({
+        email: z.string().min(1, { message: t('emailRequired') }).email({ message: t('emailInvalid') }),
+        password: z.string().min(1, { message: t('passwordRequired') }).min(8, { message: t('passwordMin') }),
+        rememberMe: z.boolean().default(false).optional()
+    });
+
+    type SignInValues = z.infer<typeof signInSchema>;
 
     const {
         register,
@@ -52,20 +53,20 @@ export function SignInForm() {
                 password: data.password,
                 providerId: 'credentials'
             });
-            toast.success('Signed in successfully');
+            toast.success(t('success'));
             router.push('/me');
         } catch (exception) {
             if (exception instanceof ApiException) {
                 const messageLower = (exception.message || '').toLowerCase();
                 const isUnverified = exception.statusCode === 401 && messageLower.includes('email not verified');
                 if (isUnverified) {
-                    toast.info(exception.message || 'Email not verified. A new verification email has been sent');
+                    toast.info(exception.message || t('emailNotVerified'));
                     router.push(`/email-verification?email=${encodeURIComponent(data.email)}`);
                 } else {
-                    toast.error(exception.message || 'Failed to sign in');
+                    toast.error(exception.message || t('error'));
                 }
             } else {
-                toast.error('Failed to sign in');
+                toast.error(t('error'));
             }
         } finally {
             setIsLoading(false);
@@ -73,14 +74,14 @@ export function SignInForm() {
     }
 
     return (
-        <AuthCard title="Sign in" description="Welcome back! Please enter your details." imageSrc="https://res.cloudinary.com/diljekoto/image/upload/v1789123854/cat_okyo6p_51140e.webp">
+        <AuthCard title={t('title')} description={t('description')} imageSrc="https://res.cloudinary.com/diljekoto/image/upload/v1789123854/cat_okyo6p_51140e.webp">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 {/* Email Field */}
                 <div className="space-y-1">
                     <Label htmlFor="email" className="text-sm font-medium">
-                        Email
+                        {t('email')}
                     </Label>
-                    <Input id="email" type="email" placeholder="your@email.com" aria-invalid={!!errors.email} {...register('email')} />
+                    <Input id="email" type="email" placeholder={t('emailPlaceholder')} aria-invalid={!!errors.email} {...register('email')} />
                     {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
                 </div>
 
@@ -88,7 +89,7 @@ export function SignInForm() {
                 <div className="space-y-1">
                     <div className="flex items-center justify-between">
                         <Label htmlFor="password" className="text-sm font-medium">
-                            Password
+                            {t('password')}
                         </Label>
                         <a
                             href="#forgot"
@@ -98,11 +99,11 @@ export function SignInForm() {
                             }}
                             className="text-xs text-primary hover:underline"
                         >
-                            Forgot password?
+                            {t('forgotPassword')}
                         </a>
                     </div>
                     <div className="relative">
-                        <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" className="pr-10" aria-invalid={!!errors.password} {...register('password')} />
+                        <Input id="password" type={showPassword ? 'text' : 'password'} placeholder={t('passwordPlaceholder')} className="pr-10" aria-invalid={!!errors.password} {...register('password')} />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1}>
                             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                         </button>
@@ -114,13 +115,13 @@ export function SignInForm() {
                 <div className="flex items-center space-x-2 pt-1">
                     <Controller name="rememberMe" control={control} render={({ field }) => <Checkbox id="rememberMe" checked={!!field.value} onCheckedChange={checked => field.onChange(!!checked)} />} />
                     <Label htmlFor="rememberMe" className="text-xs text-muted-foreground font-normal cursor-pointer">
-                        Remember me
+                        {t('rememberMe')}
                     </Label>
                 </div>
 
                 {/* Submit Button */}
                 <Button type="submit" className="w-full mt-2" disabled={isLoading}>
-                    {isLoading ? 'Signing in...' : 'Sign in'}
+                    {isLoading ? t('submitting') : t('submit')}
                 </Button>
 
                 {/* Social Login */}
@@ -132,9 +133,9 @@ export function SignInForm() {
 
                 {/* Link */}
                 <p className="text-center text-xs text-muted-foreground pt-4">
-                    Don&apos;t have an account?{' '}
+                    {t('noAccount')}{' '}
                     <Link href="/sign-up" className="text-primary font-medium hover:underline">
-                        Sign up
+                        {t('signUp')}
                     </Link>
                 </p>
             </form>
